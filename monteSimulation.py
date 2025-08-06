@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import time
 import numpy as np
 from scipy.signal import find_peaks
+from scipy.optimize import root_scalar
 import warnings
 from numba import njit
 import Monte as M
@@ -272,7 +273,56 @@ def create_initial_State(globalVars,boa,primary,frame,orbitalElements,t,primary_
         element_names = ["Semi-Major Axis [km]", "Eccentricity", "Inclination [deg]",
                          "RAAN [deg]", "ARGP [deg]", "True Anomaly [deg]"]
         
-        print(orbitalElements)
+        def repeat_groundtrack( boa, primary, inclination_deg, num_periods, num_days):
+
+            inclination_rad = math.radians(inclination_deg)
+            Tprimary = 2*math.pi*math.sqrt(primarySunSMA**3/muSun)
+
+            sunTraj = M.TrajQuery(boa,"Sun",primary,f"IAU {primary} Fixed")
+            tArray = M.Epoch.range(M.Epoch("01-JAN-2000 00:00:00 ET"),M.Epoch("03-JAN-2000 00:00:00 ET"),M.UnitDbl(1,"seconds"))
+            sunLongitudes = []
+
+            for t in tArray:
+            
+                sunState = sunTraj.state(t, 2)
+                sunLongitude = M.UnitDbl.value(M.Geodetic.longitude(sunState))
+                sunLongitudes.append(sunLongitude)
+
+            sunLongitudesArray = np.array(sunLongitudes)
+            minima_indices, _ = find_peaks(-sunLongitudesArray)
+            primarySolarDay = (minima_indices[1] - minima_indices[0])
+            primarySideralDay = Tprimary/(Tprimary/primarySolarDay + 1)
+
+            T_sat_desired = (num_days * primarySideralDay) / num_periods
+
+            def sma_eqn(sma):
+                mean_motion = 2 * math.pi / T_sat_desired
+                omega_dot = (-3 / 2) * math.sqrt(muPrimary) * primary_j2 * primary_equitorial_radius**2 * math.cos(inclination_rad) \
+                    / ((1 - 0**2)**2 * sma**(3.5))
+                return mean_motion - (math.sqrt(muPrimary / sma**3) + omega_dot)
+
+            sol = root_scalar(sma_eqn, bracket=[primary_equitorial_radius + 1, 1e9], method='brentq')
+            if not sol.converged:
+                raise RuntimeError("Failed to solve for semi-major axis")
+
+            sma_solution = sol.root
+
+            return sma_solution 
+        
+        semiMajorAxis = repeat_groundtrack( boa, primary, 
+                                           float(globalVars['InitialOrbitalElements_Inclinationdeg']), 
+                                           float(globalVars['InitialOrbitalElements_RepeatCycles']), 
+                                           float(globalVars['InitialOrbitalElements_RepeatTimedays']))
+        
+        initialState = M.State(
+            boa, scName, primary,
+            M.Conic.semiMajorAxis(M.UnitDbl(semiMajorAxis, 'km')),
+            M.Conic.eccentricity(float(globalVars['InitialOrbitalElements_Eccentricity'])),
+            M.Conic.inclination(M.UnitDbl(float(globalVars['InitialOrbitalElements_Inclinationdeg']), 'deg')),
+            M.Conic.argumentOfLatitude(M.UnitDbl(float(globalVars['InitialOrbitalElements_ArgumentofPeriapsisdeg']), 'deg')),
+            M.Conic.longitudeOfNode(M.UnitDbl(float(globalVars['InitialOrbitalElements_RAANdeg']), 'deg')),
+            M.Conic.trueAnomaly(M.UnitDbl(float(globalVars['InitialOrbitalElements_TrueAnomalydeg']), 'deg'))
+        )
 
     if orbitalElements == "Geosynchronous":
 
@@ -298,19 +348,17 @@ def create_initial_State(globalVars,boa,primary,frame,orbitalElements,t,primary_
     return initialState, element_names
 
 def shift_datetime_string(datetime_str: str, num_seconds: int, mode: str) -> str:
-    # Split into datetime part and time system part (e.g. ET, UTC, etc.)
+
     try:
         base_str, time_system = datetime_str.rsplit(' ', 1)
     except ValueError:
         raise ValueError("Input string must end with a space and a time system (e.g. 'ET')")
 
-    # Parse datetime
     try:
         dt = datetime.strptime(base_str, "%d-%b-%Y %H:%M:%S")
     except ValueError:
         raise ValueError("Datetime format must be 'DD-MMM-YYYY HH:MM:SS'")
 
-    # Add or subtract seconds
     delta = timedelta(seconds=num_seconds)
     if mode == "initial":
         new_dt = dt + delta
@@ -319,7 +367,6 @@ def shift_datetime_string(datetime_str: str, num_seconds: int, mode: str) -> str
     else:
         raise ValueError("Mode must be either 'initial' or 'final'")
 
-    # Format output
     new_dt_str = new_dt.strftime("%d-%b-%Y %H:%M:%S")
     return f"{new_dt_str} {time_system}"
 
@@ -761,15 +808,7 @@ def build_contact_array(contact_events_dict,time_step_seconds,num_entries):
 # ----------------------------------------------------------------------
 
 contact_events_dict = {}
-
 search_interval = M.TimeInterval( t0, tf )
-
-GS1 = M.EarthStnTraj( boa, 
-                      "Ground Station 1", 
-                      M.State(M.Spherical.latitude( 2.43194513046E+02 * deg ),
-                      M.Spherical.longitude( 3.665630988E+02 * deg ),
-                      M.Spherical.radius( 5.2120544722E+03 * km ) )
-                      )
 
 M.DefaultHorizonMask.addAll( boa )
 
@@ -1109,7 +1148,7 @@ total_coverage, lit_coverage, total_percent, lit_percent = a,b,c,d
 
 
 # ----------------------------------------------------------------------
-# CALCULATE REPEAT TIME AND NODAL SPACING
+# CALCULATE GROUNDTRACK REPEAT TIME AND NODAL SPACING
 # ----------------------------------------------------------------------
 
 repeatState = trajQuery.state(t0)
@@ -1135,10 +1174,7 @@ primaryState = primaryTraj.state(t, 2)
 primarySunOrbitalRadius = primaryState.posMag()
 primarySunOrbitalSpeed = primaryState.velMag()
 primarySunSMA = (2/M.UnitDbl.value(primarySunOrbitalRadius)-M.UnitDbl.value(primarySunOrbitalSpeed)**2/M.UnitDbl.value(M.BodyData.gm(sunBodyData)))**-1
-
 Tprimary = 2*math.pi*math.sqrt(primarySunSMA**3/muSun)
-
-print(Tprimary/60/60/24)
 
 sunTraj = M.TrajQuery(boa,"Sun",primary,f"IAU {primary} Fixed")
 tArray = M.Epoch.range(M.Epoch("01-JAN-2000 00:00:00 ET"),M.Epoch("03-JAN-2000 00:00:00 ET"),M.UnitDbl(1,"seconds"))
@@ -1155,12 +1191,9 @@ minima_indices, _ = find_peaks(-sunLongitudesArray)
 primarySolarDay = (minima_indices[1] - minima_indices[0])
 primarySideralDay = Tprimary/(Tprimary/primarySolarDay + 1)
 
-print(primarySolarDay)
-print(primarySideralDay)
-
 omegaDot = math.cos(inclination)*(-3/2*math.sqrt(muPrimary)*primary_j2*primary_equitorial_radius**2/((1-eccentricity**2)**2*semimajoraxis**3.5))
 
-NdArray = range(1,1001)
+NdArray = range(1,100001)
 NsArray = []
 
 for Nd in NdArray:
@@ -1179,11 +1212,20 @@ for Ns in NsArray:
     diffs.append(diff)
 
 diffArray = np.array(diffs)
-minDiff, minDiffIdx = find_peaks(-diffArray)
+minDiffIdx = np.argmin(diffArray)
 
-print(minDiff)
-print(NsArray[minDiff][0])
+if InitialOrbitalElements_Type == "Repeat Ground Track":
 
+    repeat_num_days = InitialOrbitalElements_RepeatTimedays
+    repeat_num_periods = str(round(NsArray[minDiffIdx]/minDiffIdx*float(InitialOrbitalElements_RepeatTimedays)))
+    nodal_spacing = str(round(360*minDiffIdx/NsArray[minDiffIdx],2)%360)
+
+else:
+
+    repeat_num_days = str(round(minDiffIdx))
+    repeat_num_periods = str(round(NsArray[minDiffIdx]))
+    nodal_spacing = str(round(360*minDiffIdx/NsArray[minDiffIdx],2)%360)
+    
 
 # ----------------------------------------------------------------------
 # EXPORT SIMULATION DATA TO JSON
@@ -1225,12 +1267,7 @@ def is_json_serializable(obj):
         return False
 
 def export_globals_to_json(path):
-    """
-    Export global variables to JSON.
-    - Dictionaries are converted recursively.
-    - NumPy arrays are converted to lists.
-    - All other variables behave as in the original code.
-    """
+
     global_vars = globals()
     export_dict = {}
 
@@ -1254,7 +1291,7 @@ export_globals_to_json("monte_data.json")
 
 
 # ----------------------------------------------------------------------
-# CREATE PLOTS AND DATA OUTPUT
+# CREATE PLOTS AND DATA OUTPUT WINDOW
 # ----------------------------------------------------------------------
 
 commands = [

@@ -46,7 +46,7 @@ def run_script(path_to_script,json_path):
     if process_handle is None:
         process_handle = subprocess.Popen(
             ["python3", "-W", "ignore:A NumPy version >=", path_to_script, json_path],
-            preexec_fn=os.setsid  # start in a new process group
+            preexec_fn=os.setsid
         )
         os.system("clear")
         cprint(f"Simulation Started on Process: {process_handle.pid}","green")
@@ -110,7 +110,7 @@ class OrbitSimUI(QWidget):
         self.setFixedSize(1000, 700)
         font = QFont("Arial", 10)
         self.setFont(font)
-        self.bg_color = "#724f76"
+        self.bg_color = "#8c6b90"
         self.setObjectName("MainWindow")
         self.setStyleSheet("""
             QWidget#MainWindow {
@@ -749,10 +749,8 @@ class OrbitSimUI(QWidget):
             scrollbar.setPageStep(internal_scroll.pageStep())
             scrollbar.setSingleStep(internal_scroll.singleStep())
 
-        # One-time range sync on load
         sync_range()
 
-        # Two-way scroll sync
         internal_scroll.valueChanged.connect(scrollbar.setValue)
         scrollbar.valueChanged.connect(internal_scroll.setValue)
         internal_scroll.rangeChanged.connect(sync_range)
@@ -959,11 +957,11 @@ class OrbitSimUI(QWidget):
             else:
                 le.setVisible(False)
             if label_text == "X-Position [km]:":
-                le.setText("7500")
+                le.setText("15000")
             if label_text == "Y-Position [km]:":
-                le.setText("7500")
+                le.setText("15000")
             if label_text == "Z-Position [km]:":
-                le.setText("7500")
+                le.setText("15000")
             if label_text == "Latitude [deg]:":
                 le.setText("0.00")
             if label_text == "Longitude [deg]:":
@@ -978,7 +976,7 @@ class OrbitSimUI(QWidget):
                 le.setText("10000")
 
     def orbital_elements_box(self):
-        spacing = 6  # Controls vertical spacing between rows
+        spacing = 6
 
         box = QGroupBox("Initial Orbital Elements:")
         self.apply_background(box, self.bg_color)
@@ -986,7 +984,6 @@ class OrbitSimUI(QWidget):
         layout.setContentsMargins(0,0,0,0)
         layout.setSpacing(spacing)
 
-        # === Mode Selection Row ===
         mode_selector_row = QHBoxLayout()
         mode_selector_row.setContentsMargins(0,0,0,0)
         mode_selector_row.setSpacing(10)
@@ -1011,7 +1008,6 @@ class OrbitSimUI(QWidget):
         mode_selector_row.addWidget(self.special_mode_button)
         mode_selector_row.addStretch()
 
-        # === Orbital Elements Type Row ===
         self.oe_type_row_widget = QWidget()
         self.oe_type_row_widget.setContentsMargins(0, 0, 0, 0)
         oe_type_row = QHBoxLayout()
@@ -1034,7 +1030,6 @@ class OrbitSimUI(QWidget):
         oe_type_row.addStretch()
         self.oe_type_row_widget.setLayout(oe_type_row)
 
-        # === Special Orbit Row ===
         self.special_orbit_row_widget = QWidget()
         self.special_orbit_row_widget.setContentsMargins(0, 0, 0, 0)
         special_orbit_row = QHBoxLayout()
@@ -1058,7 +1053,6 @@ class OrbitSimUI(QWidget):
         special_orbit_row.addStretch()
         self.special_orbit_row_widget.setLayout(special_orbit_row)
 
-        # === Reference Frame Row ===
         rf_row = QHBoxLayout()
         rf_row.setContentsMargins(0,0,0,0)
         rf_row.setSpacing(spacing)
@@ -1082,14 +1076,12 @@ class OrbitSimUI(QWidget):
         rf_row.addWidget(self.rf_combo)
         rf_row.addStretch()
 
-        # === OE Input Rows ===
         self.oe_inputs_container = QVBoxLayout()
         self.oe_inputs_widget = QWidget()
         self.oe_inputs_widget.setLayout(self.oe_inputs_container)
         self.oe_inputs_container.setContentsMargins(0,0,0,0)
         self.oe_inputs_widget.setFixedHeight(225)
 
-        # === Layout Assembly ===
         layout.addSpacing(10)
         layout.addLayout(mode_selector_row)
         layout.addWidget(self.oe_type_row_widget)
@@ -1169,7 +1161,8 @@ class OrbitSimUI(QWidget):
             "Sun Synchronous Orbit": ["Altitude [km]:", "MLTAN [hours]:", "True Anomaly [deg]:", "", "","", "", "",""],
             "Frozen Orbit": ["Semi-Major Axis [km]:", "Inclination [deg]:", "RAAN [deg]:", "Argument of Periapsis [deg]:", 
                              "True Anomaly [deg]:", "", "", "",""],
-            "Repeat Ground Track": ["Repeat Time [days]:", "Repeat Cycles:", "Inclination [deg]:", "", "", "", "", "",""]
+            "Repeat Ground Track": ["Repeat Time [days]:", "Repeat Cycles:", "Eccentricity:", "Inclination [deg]:",
+                          "RAAN [deg]:", "Argument of Periapsis [deg]:", "True Anomaly [deg]:","",""]
         }
 
         fields = field_map.get(oe_type, [])
@@ -1294,11 +1287,19 @@ class OrbitSimUI(QWidget):
 
             if oe_type == "Repeat Ground Track":
                 if label_text == "Repeat Time [days]:":
-                    le.setText("2")
+                    le.setText("2.0")
                 if label_text == "Repeat Cycles:":
                     le.setText("17")
-                if label_text == "Repeat Cycles:":
-                    le.setText("60.0")
+                if label_text == "Eccentricity:":
+                    le.setText("0.000")
+                if label_text == "Inclination [deg]:":
+                    le.setText("60.000")
+                if label_text == "RAAN [deg]:":
+                    le.setText("0.000")
+                if label_text == "Argument of Periapsis [deg]:":
+                    le.setText("0.000")
+                if label_text == "True Anomaly [deg]:":
+                    le.setText("0.000")
 
             if oe_type == "Geosynchronous":
                 le.setText("-135.000")
@@ -1796,7 +1797,6 @@ class OrbitSimUI(QWidget):
         toggle_widget.toggle_state = initialState
         toggle_widget.name = name
 
-        # Background frame
         background = QFrame(toggle_widget)
         background.setGeometry(0, 0, full_width, full_height)
         background.setStyleSheet(f"""
@@ -1807,7 +1807,6 @@ class OrbitSimUI(QWidget):
             }}
         """)
 
-        # RIGHT = OFF (Red)
         bg_off = QFrame(toggle_widget)
         bg_off.setGeometry(padding + half_width, padding, half_width, height)
         bg_off.setStyleSheet(f"""
@@ -1818,7 +1817,6 @@ class OrbitSimUI(QWidget):
             }}
         """)
 
-        # LEFT = ON (Green)
         bg_on = QFrame(toggle_widget)
         bg_on.setGeometry(padding, padding, half_width, height)
         bg_on.setStyleSheet(f"""
@@ -1829,7 +1827,6 @@ class OrbitSimUI(QWidget):
             }}
         """)
 
-        # Label buttons
         btn_on = QPushButton("On", toggle_widget)
         btn_on.setGeometry(padding, padding, half_width, height)
         btn_on.setEnabled(False)
@@ -1854,7 +1851,6 @@ class OrbitSimUI(QWidget):
             }
         """)
 
-        # Slider
         slider = QFrame(toggle_widget)
         slider.setObjectName("slider")
         slider_x = padding + (half_width if initialState else 0)
@@ -1869,7 +1865,6 @@ class OrbitSimUI(QWidget):
             }
         """)
 
-        # Hover behavior
         def on_slider_hover(event):
             slider.setProperty("hover", True)
             slider.setStyle(slider.style())
@@ -1889,7 +1884,6 @@ class OrbitSimUI(QWidget):
         slider_button.installEventFilter(toggle_widget)
         toggle_widget.eventFilter = eventFilter
 
-        # Z-order
         background.lower()
         bg_off.raise_()
         bg_on.raise_()
@@ -1898,7 +1892,6 @@ class OrbitSimUI(QWidget):
         slider.raise_()
         slider_button.raise_()
 
-        # Animations
         animation = QPropertyAnimation(slider, b"geometry")
         animation.setDuration(200)
         animation.setEasingCurve(QEasingCurve.Type.InOutQuad)
@@ -1907,10 +1900,9 @@ class OrbitSimUI(QWidget):
         animation_btn.setDuration(200)
         animation_btn.setEasingCurve(QEasingCurve.Type.InOutQuad)
 
-        # Style logic
         def update_slider_style(on):
             if on:
-                # Right (ON)
+
                 slider.setStyleSheet(f"""
                     QFrame#slider[hover="false"] {{
                         background-color: #555;
@@ -1926,7 +1918,7 @@ class OrbitSimUI(QWidget):
                     }}
                 """)
             else:
-                # Left (OFF)
+
                 slider.setStyleSheet(f"""
                     QFrame#slider[hover="false"] {{
                         background-color: #555;
@@ -1963,16 +1955,13 @@ class OrbitSimUI(QWidget):
             slider.setStyle(slider.style())
             set_toggle_state(not toggle_widget.toggle_state)
 
-        # Connect toggle
         slider_button.clicked.connect(toggle_state)
 
-        # Initialize appearance
         update_slider_style(initialState)
         slider.setProperty("hover", False)
         slider.setStyle(slider.style())
         set_toggle_state(initialState)
 
-        # External access
         toggle_widget.get_state = lambda: toggle_widget.toggle_state
         toggle_widget.set_state = set_toggle_state
 
@@ -1997,7 +1986,7 @@ class FreezableScrollArea(QScrollArea):
             event.ignore()
 
     def eventFilter(self, obj, event):
-        # Optional: prevent keyboard/trackpad scroll events if needed
+        
         if self.scroll_frozen and event.type() in (event.Type.Wheel, event.Type.KeyPress):
             return True
         return super().eventFilter(obj, event)

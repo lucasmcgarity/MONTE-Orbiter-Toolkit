@@ -2,20 +2,16 @@ import os
 import sys
 import base64
 import numpy as np
-import math
-import io
 from io import BytesIO
 from datetime import datetime, timedelta
-import time
 from PIL import Image
 import plotly.graph_objects as go
-from plotly.io import to_image
 from PyQt5.QtWidgets import( 
-                        QApplication, QLabel, QMainWindow, QScrollArea, QFrame,
-                        QVBoxLayout, QGridLayout, QWidget, QSizePolicy 
+                        QApplication, QLabel, QMainWindow, QScrollArea,
+                        QVBoxLayout, QWidget, QSizePolicy 
                         )
-from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt
 import json
 
 

@@ -1,21 +1,16 @@
-import os
 import sys
-import base64
 import numpy as np
 import math
-import io
 from io import BytesIO
 from datetime import datetime, timedelta
 import time
 from PIL import Image
 import plotly.graph_objects as go
-from plotly.io import to_image
 from PyQt5.QtWidgets import( 
-                        QApplication, QLabel, QMainWindow, QScrollArea, QFrame,
-                        QVBoxLayout, QGridLayout, QWidget, QSizePolicy 
+                        QApplication, QLabel, QMainWindow
                         )
-from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt
 import json
 
 
@@ -64,13 +59,13 @@ def plot_orbital_elements(globalVars, element_names, initial_time_str, time_step
     title_font_color = "#ff0000"
     x_label_font_size = 14
     y_label_font_size = 24
-    x_tick_label_font_size = 12
+    x_tick_label_font_size = 20
     y_tick_label_font_size = 20
     axis_color = "#FFFFFF"
     axis_width = 1
     line_color = "#FF0000"
     line_width = 1
-    bg_color = "#333"
+    bg_color = "black"
 
     def clean_key(name):
         return name.split("[")[0].strip().replace("-", "").replace(" ", "")

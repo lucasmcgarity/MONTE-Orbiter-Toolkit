@@ -1,21 +1,11 @@
-import os
 import sys
-import base64
 import numpy as np
-import math
-import io
-from io import BytesIO
-from datetime import datetime, timedelta
-import time
-from PIL import Image
-import plotly.graph_objects as go
-from plotly.io import to_image
+from datetime import datetime
 from PyQt5.QtWidgets import( 
-                        QApplication, QLabel, QMainWindow, QScrollArea, QFrame,
+                        QApplication, QLabel, QScrollArea, QFrame,
                         QVBoxLayout, QGridLayout, QWidget, QSizePolicy 
                         )
-from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 import json
 
 
@@ -342,36 +332,28 @@ def format_shadow_dict(data):
         for line in events:
             parts = line.split()
 
-            # Validate format
             if len(parts) < 8 or parts[0].lower() != "in":
-                continue  # skip malformed lines
+                continue
 
             region = parts[1].capitalize()
 
-            # Correctly extract entry and exit timestamps
             entry_str = f"{parts[2]} {parts[3]}"
-            exit_str  = f"{parts[5]} {parts[6]}"  # skip "ET" at index 4
+            exit_str  = f"{parts[5]} {parts[6]}"
 
-            # Convert to datetime
             entry_dt = datetime.strptime(entry_str, "%d-%b-%Y %H:%M:%S.%f")
             exit_dt  = datetime.strptime(exit_str,  "%d-%b-%Y %H:%M:%S.%f")
 
-            # Convert to seconds (with slight offset)
             entry_sec = (entry_dt - epoch).total_seconds() + 0.00001
             exit_sec  = (exit_dt - epoch).total_seconds() - 0.00001
 
-            # Label each event
             entry_label = f"Entering {body}'s {region}:"
             exit_label  = f"Exiting {body}'s {region}:"
 
-            # Store in dict for sorting
             time_dict[entry_sec] = (entry_label, entry_str)
             time_dict[exit_sec]  = (exit_label,  exit_str)
 
-    # Determine padding width for alignment
     max_label_len = max(len(label) for label, _ in time_dict.values())
 
-    # Build formatted output
     formatted_output = []
     for seconds in sorted(time_dict):
         label, timestamp = time_dict[seconds]
@@ -382,7 +364,7 @@ def format_shadow_dict(data):
 
 
 # ------------------------------------------------------------------------------------
-# PUPULATE AND CREATE DATA OUTPUT WINDOW 
+# PUPULATE DATA OUTPUT WINDOW TILES
 # ------------------------------------------------------------------------------------
 
 contact_events = format_contact_dict(build_contact_event_dict(contact_events_dict))
@@ -424,9 +406,6 @@ sunlit_percent_str = str(sunlit_ratio*100)[:6]
 
 sunlit_seconds = len(shadow_array)*time_step_seconds*sunlit_ratio
 sunlit_sec_str = str(sunlit_seconds*100)[:6]
-
-
-# Populate Output Window Tiles
 
 contactEventsTile1 = [
 
@@ -499,6 +478,10 @@ label_width = 30
 total_coverage_percent_label = (f"Total Coverage:").ljust(label_width) + (f"{total_coverage_percentage}").ljust(12) + "[%]"
 total_coverage_label = (f"Sunlit Coverage:").ljust(label_width) + (f"{sunlit_coverage_percentage}").ljust(12) + "[%]"
 
+repeat_num_periods_label = (f"Number of Periods:").ljust(label_width) + (f"{repeat_num_periods}").ljust(12)
+repeat_num_days_label = (f"Number of Days:").ljust(label_width) + (f"{repeat_num_days}").ljust(12) + "[days]"
+repeat_nodal_spacing_label = (f"Nodal Spacing:").ljust(label_width) + (f"{nodal_spacing}").ljust(12) + "[deg]"
+
 primary_shadow_percent_label = (f"Time in {primary}\'s Shadow:").ljust(label_width) + (f"{primary_shadow_percent_str}").ljust(12) + "[%]"
 primary_shadow_label = (f"Time in {primary}\'s Shadow:").ljust(label_width) + (f"{primary_shadow_sec_str}").ljust(12) + "[seconds]"
 
@@ -509,6 +492,15 @@ otherDataTile1 =     [
                         ("----------------------------------------------------------------------------------------------------", {"font-size": 9}),
                         (f'<div style="white-space: pre; font-family: monospace">{total_coverage_percent_label}</div>', {"font-size": 9}),
                         (f'<div style="white-space: pre; font-family: monospace">{total_coverage_label}</div>', {"font-size": 9}),
+                        ("----------------------------------------------------------------------------------------------------", {"font-size": 9}),
+                         ("",{"blank": True}),
+                        ("",{"blank": True}),
+                        ("Ground Track Repetition:", {"font-size": 14, "bold": True,"underline": True}),
+                        ("",{"blank": True}),
+                        ("----------------------------------------------------------------------------------------------------", {"font-size": 9}),
+                        (f'<div style="white-space: pre; font-family: monospace">{repeat_num_periods_label}</div>', {"font-size": 9}),
+                        (f'<div style="white-space: pre; font-family: monospace">{repeat_num_days_label}</div>', {"font-size": 9}),
+                        (f'<div style="white-space: pre; font-family: monospace">{repeat_nodal_spacing_label}</div>', {"font-size": 9}),
                         ("----------------------------------------------------------------------------------------------------", {"font-size": 9}),
                         ("",{"blank": True}),
                         ("",{"blank": True}),
@@ -564,7 +556,7 @@ otherDataTile3 =    [
                         ("",{"blank": True}),
                         ("",{"blank": True}), ]
 
-if len(contact_events)!=10:
+if len(GroundStations_Predefined)!=0:
                         
     otherDataTile3 += [
                             ("Contact Time:", {"font-size": 14, "bold": True,"underline": True}),
@@ -634,8 +626,13 @@ contactEventsTile = contactEventsTile1 + contactEventsTile2
 shadowEventsTile = shadowEventsTile1 + shadowEventsTile2
 otherDataTile = otherDataTile1 + otherDataTile2 + otherDataTile3
 
-contact_events_toggle = len(contact_events)!=10 and DataOutput_ContactEvents
+contact_events_toggle = len(GroundStations_Predefined)!=0 and DataOutput_ContactEvents
 shadow_events_toggle = len(shadow_events)!=10 and DataOutput_ShadowEvents
+
+
+# ------------------------------------------------------------------------------------
+# CREATE DATA OUTPUT WINDOW
+# ------------------------------------------------------------------------------------
 
 app = QApplication([])
 

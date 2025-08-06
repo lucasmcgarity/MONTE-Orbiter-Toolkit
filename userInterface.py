@@ -866,9 +866,9 @@ class OrbitSimUI(QWidget):
         layout = QHBoxLayout()
 
         toggle_layout = QVBoxLayout()
-        for option in ["Ground Track", "3-D Vizualization", "Orbital Elements", "Animate Plots", "Export Plots"]:
+        for option in ["Ground Track", "3-D Visualization", "Orbital Elements", "Animate Plots", "Export Plots"]:
             row = QHBoxLayout()
-            if option in ["Ground Track", "3-D Vizualization", "Orbital Elements"]:
+            if option in ["Ground Track", "3-D Visualization", "Orbital Elements"]:
                 initialState=True
             else:
                 initialState=False
@@ -1038,8 +1038,8 @@ class OrbitSimUI(QWidget):
         self.special_orbit_label = QLabel("  Special Orbit:")
         self.special_orbit_label.setFixedWidth(192)
         self.special_orbit_combo = QComboBox()
-        self.special_orbit_combo.addItems(["Sun Synchronous Orbit", "Frozen Orbit", "Repeat Ground Track",
-                                           "Geosynchronous", "Molniya", "Tundra"])
+        self.special_orbit_combo.addItems(["Sun Synchronous Orbit", "Frozen Orbit", "Repeat Ground Track"])
+                                           #,"Geosynchronous", "Molniya", "Tundra"])
         self.special_orbit_combo.setFixedWidth(252)
         self.special_orbit_combo.currentTextChanged.connect(self.update_orbital_elements_inputs)
         self.special_orbit_combo.setStyleSheet("""

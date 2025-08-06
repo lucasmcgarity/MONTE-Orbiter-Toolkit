@@ -580,13 +580,6 @@ xPositions = []
 yPositions = []
 zPositions = []
 
-smas = []
-es = []
-incs = []
-argps = []
-raans = []
-tAnoms = []
-
 SemiMajorAxis = []
 Eccentricity = []
 Inclination = []
@@ -628,7 +621,7 @@ for t in tArray:
     longitudes.append(longitude)
     heights.append(height)
 
-    if Plotting_3DVizualization:
+    if Plotting_3DVisualization:
 
         xPos = state.pos()[0]
         yPos = state.pos()[1]
@@ -640,7 +633,7 @@ for t in tArray:
 
     if Plotting_OrbitalElements:
 
-        if orbitalElements == "Keplarian":
+        if (orbitalElements == "Keplarian") | (orbitalElements == "Conic"):
 
             sma = M.Conic.semiMajorAxis(state)
             e = M.Conic.eccentricity(state)
@@ -656,7 +649,7 @@ for t in tArray:
             ARGP.append(M.UnitDbl.value(raan)*180/math.pi)
             TrueAnomaly.append(M.UnitDbl.value(tAnom)*180/math.pi)
 
-        if (orbitalElements == "Cartesian") | (orbitalElements == "Conic"):
+        if orbitalElements == "Cartesian":
 
             x = M.Cartesian.x(state)
             y = M.Cartesian.y(state)

@@ -343,7 +343,7 @@ export_path = ""
 camera_pos = [float(Plotting_XPositionkm), float(Plotting_YPositionkm), float(Plotting_ZPositionkm)]
 app = QApplication([])
 
-if Plotting_3DVizualization:
+if Plotting_3DVisualization:
     print()
     cprint("Creating 3-D Plot", "blue")
     plot3D_5 = plot_orbit_3d(primary, primary_equitorial_radius, primary_polar_radius,
@@ -351,3 +351,4 @@ if Plotting_3DVizualization:
                              longitudes[-1], stations)
 
 app.exec_()
+

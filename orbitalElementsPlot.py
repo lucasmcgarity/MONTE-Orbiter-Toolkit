@@ -1,9 +1,7 @@
 import sys
 import numpy as np
-import math
 from io import BytesIO
 from datetime import datetime, timedelta
-import time
 from PIL import Image
 import plotly.graph_objects as go
 from PyQt5.QtWidgets import( 
@@ -72,7 +70,7 @@ def plot_orbital_elements(globalVars, element_names, initial_time_str, time_step
 
     time_zone = initial_time_str.split()[-1]
     base_time = datetime.strptime(initial_time_str[:-len(time_zone)].strip(), "%d-%b-%Y %H:%M:%S.%f")
-    n_points = len(globalVars[clean_key(element_names[0])])
+    n_points = len(globalVars["longitudes"])
     time_array = [base_time + timedelta(seconds=i * time_step) for i in range(n_points)]
 
     num_ticks = 8

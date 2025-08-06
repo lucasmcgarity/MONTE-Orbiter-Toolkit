@@ -1016,7 +1016,7 @@ class OrbitSimUI(QWidget):
         self.oe_type_label = QLabel("  Orbital Elements Type:")
         self.oe_type_label.setFixedWidth(192)
         self.oe_type_combo = QComboBox()
-        self.oe_type_combo.addItems(["Keplarian", "Cartesian", "Spherical", "Equinoctial"])
+        self.oe_type_combo.addItems(["Keplarian", "Cartesian", "Spherical", "Custom"])
         self.oe_type_combo.setFixedWidth(252)
         self.oe_type_combo.currentTextChanged.connect(self.update_orbital_elements_inputs)
         self.oe_type_combo.setStyleSheet("""
@@ -1154,7 +1154,8 @@ class OrbitSimUI(QWidget):
                           "X Velocity [km/s]:", "Y Velocity [km/s]:", "Z Velocity [km/s]:", "", "",""],
             "Spherical": ["Radius [km]:", "Latitude [deg]:", "Longitude [deg]:", "Radial Velocity [km/s]:", 
                           "Latitudinal Velocity [deg/s]:","Longitudinal Velocity [deg/s]:", "", "",""],
-            "Equinoctial": ["SMA [km]:","H:","K:","Lambda [deg]:","P:","Q:","Alpha [deg/s]:","dLambda [deg/s]:","Gamma [deg/s]:"],
+            "Custom": ["Custom Elements Type:","Custom Element 1:","Custom Element 2:","Custom Element 3:",
+                       "Custom Element 4:","Custom Element 5:","Custom Element 6:","Custom Element 7:","Custom Element 8:",],
             "Geosynchronous": ["Target Longitude [deg]:","","","","","", "", "",""],
             "Molniya": ["Target Longitude [deg]:", "", "","","","", "", "",""],
             "Tundra": ["Target Longitude [deg]:", "", "","","","", "", "",""],
@@ -1245,25 +1246,25 @@ class OrbitSimUI(QWidget):
                 if label_text == "Longitudinal Velocity [deg/s]:":
                     le.setText("0.065")
 
-            if oe_type == "Equinoctial":
-                if label_text == "SMA [km]:":
-                    le.setText("6778.0")
-                if label_text == "H:":
-                    le.setText("0.000")
-                if label_text == "K:":
-                    le.setText("0.000")
-                if label_text == "Lambda [deg]:":
-                    le.setText("0.000")
-                if label_text == "P:":
-                    le.setText("0.466")
-                if label_text == "Q:":
-                    le.setText("0.000")
-                if label_text == "Alpha [deg/s]:":
-                    le.setText("0.000")
-                if label_text == "dLambda [deg/s]:":
-                    le.setText("0.000")
-                if label_text == "Gamma [deg/s]:":
-                    le.setText("0.000")
+            if oe_type == "Custom":
+                if label_text == "Custom Elements Type:":
+                    le.setText("Conic")
+                if label_text == "Custom Element 1:":
+                    le.setText("semiMajorAxis [km]: 6778.0")
+                if label_text == "Custom Element 2:":
+                    le.setText("eccentricity: 0.000")
+                if label_text == "Custom Element 3:":
+                    le.setText("inclination [deg]: 51.600")
+                if label_text == "Custom Element 4:":
+                    le.setText("argumentOfLatitude [deg]: 0.000")
+                if label_text == "Custom Element 5:":
+                    le.setText("longitudeOfNode [deg]: 0.000")
+                if label_text == "Custom Element 6:":
+                    le.setText("trueAnomaly [deg]: 0.000")
+                if label_text == "Custom Element 7:":
+                    le.setText("")
+                if label_text == "Custom Element 8:":
+                    le.setText("")
 
             if oe_type == "Sun Synchronous Orbit":
                 if label_text == "Altitude [km]:":

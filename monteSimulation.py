@@ -1,6 +1,5 @@
 import json
 import sys
-import os
 import re
 import math
 import subprocess
@@ -207,26 +206,60 @@ def create_initial_State(globalVars,boa,primary,frame,orbitalElements,t,primary_
             M.Spherical.dlongitude(M.UnitDbl(float(globalVars['InitialOrbitalElements_ZVelocitykms']), 'deg/sec'))
         )
 
-    if orbitalElements == "Equinoctial":
+    if orbitalElements == "Custom":
 
-        element_names = ["SMA [km]","H","K","Lambda [deg]","P","Q","Alpha [deg/s]","dLambda [deg/s]","Gamma [deg/s]"]
+        oe_inputs = {InitialOrbitalElements_CustomElement1, InitialOrbitalElements_CustomElement2, InitialOrbitalElements_CustomElement3,
+                     InitialOrbitalElements_CustomElement4, InitialOrbitalElements_CustomElement5, InitialOrbitalElements_CustomElement6,
+                     InitialOrbitalElements_CustomElement7, InitialOrbitalElements_CustomElement8}
+        
+        oe_input_types = []
+        oe_input_units = []
+        oe_input_vals = []
 
-        initialState = M.EquinoctialTraj(
-            boa, 
-            scName, 
-            primary, 
-            frame, 
-            t,
-            M.UnitDbl(float(globalVars['InitialOrbitalElements_SMAkm']), 'km'),
-            float(globalVars['InitialOrbitalElements_H']),
-            float(globalVars['InitialOrbitalElements_K']),
-            M.UnitDbl(float(globalVars['InitialOrbitalElements_Lambdadeg']), 'deg'),
-            float(globalVars['InitialOrbitalElements_P']),
-            float(globalVars['InitialOrbitalElements_Q']),
-            M.UnitDbl(float(globalVars['InitialOrbitalElements_Alphadegs']), 'deg/sec'),
-            M.UnitDbl(float(globalVars['InitialOrbitalElements_dLambdadegs']), 'deg/sec'),
-            M.UnitDbl(float(globalVars['InitialOrbitalElements_Gammadegs']), 'deg/sec')
+        for oe_input in oe_inputs:
+
+            if len(oe_input)!=0:
+
+                oe_input_parts = oe_input.split()
+
+                if len(oe_input_parts)==2:
+
+                    oe_input_type = oe_input_parts[0][:-1]
+                    oe_input_unit = 1
+                    oe_input_val = oe_input_parts[1]
+                    oe_input_types.append(oe_input_type)
+                    oe_input_units.append(oe_input_unit)
+                    oe_input_vals.append(oe_input_val)
+
+                if len(oe_input_parts)==3:
+
+                    oe_input_type = oe_input_parts[0]
+                    oe_input_unit = oe_input_parts[1][1:-2]
+                    oe_input_val = oe_input_parts[2]
+                    oe_input_types.append(oe_input_type)
+                    oe_input_units.append(oe_input_unit)
+                    oe_input_vals.append(oe_input_val)
+
+        orbitalElements = InitialOrbitalElements_CustomElementsType
+
+        element_names = oe_input_types
+
+        dynamic_arguments = []
+
+        for i in range(len(oe_input_types)):
+
+            method_to_call = getattr(getattr(M, orbitalElements), oe_input_types[i])
+            argument_value = M.UnitDbl(float(oe_input_vals[i]), oe_input_units[i])
+
+            dynamic_arguments.append(method_to_call(argument_value))
+
+        initialState = M.State(
+            boa, scName, primary,
+            *dynamic_arguments
         )
+
+        element_names = ["Semi-Major Axis [km]", "Eccentricity", "Inclination [deg]",
+                         "RAAN [deg]", "ARGP [deg]", "True Anomaly [deg]"]
 
     if orbitalElements == "Sun Synchronous Orbit":
 
@@ -623,7 +656,7 @@ for t in tArray:
             ARGP.append(M.UnitDbl.value(raan)*180/math.pi)
             TrueAnomaly.append(M.UnitDbl.value(tAnom)*180/math.pi)
 
-        if orbitalElements == "Cartesian":
+        if (orbitalElements == "Cartesian") | (orbitalElements == "Conic"):
 
             x = M.Cartesian.x(state)
             y = M.Cartesian.y(state)
